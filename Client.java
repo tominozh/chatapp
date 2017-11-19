@@ -8,7 +8,7 @@ import java.net.UnknownHostException;
 
 public class Client implements Runnable {
 
-  // The client socket
+ // The client socket
   private static Socket clientSocket = null;
   // The output stream
   private static PrintStream os = null;
@@ -25,8 +25,15 @@ public class Client implements Runnable {
     // The default host.
     String host = "localhost";
 
-    System.out.println("Usage: java MultiThreadChatClient <host> <portNumber>\n"
+    if (args.length < 2) {
+      System.out
+          .println("Usage: java MultiThreadChatClient <host> <portNumber>\n"
               + "Now using host=" + host + ", portNumber=" + portNumber);
+    } else {
+      host = args[0];
+      portNumber = Integer.valueOf(args[1]).intValue();
+    }
+
     /*
      * Open a socket on a given host and port. Open input and output streams.
      */
@@ -78,7 +85,7 @@ public class Client implements Runnable {
      */
     String responseLine;
     try {
-      while ((responseLine = is.readUTF()) != null) {
+      while ((responseLine = is.readLine()) != null) {
         System.out.println(responseLine);
         if (responseLine.indexOf("*** Bye") != -1)
           break;
