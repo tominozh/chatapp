@@ -31,7 +31,6 @@ import java.net.ServerSocket;
     while (true) {
       try {
         clientSocket = serverSocket.accept();
-        System.out.println("Client connected on port number: "+clientSocket.getLocalSocketAddress());
         int i = 0;
         for (i = 0; i < MAX_CLIENTS_COUNT; i++) {
           if (clientThreads[i] == null) {
@@ -57,9 +56,9 @@ import java.net.ServerSocket;
  * streams for a particular client, ask the client's name, informs all the
  * clients connected to the server about the fact that a new client has joined
  * the chat room, and as long as it receive data, echos that data back to all
- * other clients. The thread broadcast the incoming messages to all clients and
- * routes the private message to the particular client. When a client leaves the
- * chat room this thread informs also all the clients about that and terminates.
+ * other clients. The thread broadcast the incoming messages to all clients.
+ *  When a client leaves the chat room this thread informs also all the 
+ *  clients about that and terminates.
  */
 class ClientsHandler extends Thread {
   public static int counter = 0;
@@ -92,69 +91,83 @@ class ClientsHandler extends Thread {
       /* Welcome the new the client. */
       outputStream.println("Welcome " + this.clientName + " to our chat room.\nTo leave enter /quit in a new line.");
       
-      synchronized (this) {    	 
+      synchronized (this) {      
         //let other clients know I joined the chat
+        System.out.println("Server: Synchronizing all "+counter+" clients");
         for (int i = 0; i < maxClientsCount; i++) {
           if (clientThreads[i] != null && clientThreads[i] != this) {
-        	  clientThreads[i].outputStream.println("A new user " + this.clientName + " entered the chat");
+              clientThreads[i].outputStream.println("A new user " + this.clientName + " entered the chat");
           }
         }
       }
       /* Start the conversation. */
-      while (true) {    	
-        String line = inputStream.readLine();
-        if (line.startsWith("/quit")) {
-          break;
-        }
-        //write message to every client other than this client
-          synchronized (this) {
-        	  System.out.println("Server: Synchronizing all "+counter+" clients");
-        	  if(line.startsWith("@")) {
-        		  String sendTo = line.substring(line.indexOf(0,12));
-        		  System.out.println("send to: "+sendTo);
-        		  for (int i = 0; i < maxClientsCount; i++) {
-        			  if (clientThreads[i].clientName.equals(sendTo)) {
-        				  clientThreads[i].outputStream.println("<PM from " + this.clientName + "> " + line);
-        			  }
-        		  }
-        	  }else {       	
-            for (int i = 0; i < maxClientsCount; i++) {
-              if (clientThreads[i] != null && !clientThreads[i].clientName.equals(this.clientName)) {
-            	  clientThreads[i].outputStream.println("<" + this.clientName + "> " + line);
-              }
-            }
-          }
-        }
-      }
-      synchronized (this) {
-        for (int i = 0; i < maxClientsCount; i++) {
-          if (clientThreads[i] != null && clientThreads[i] != this
-              && !clientThreads[i].clientName.equals(this.clientName)) {
-        	  clientThreads[i].outputStream.println("The user " + this.clientName+ " is leaving the chat room.");
-          }
-        }
-      }
-      outputStream.println("Bye " + this.clientName);
-
-      /*
-       * Clean up. Set the current thread variable to null so that a new client
-       * could be accepted by the server.
-       */
-      synchronized (this) {
-        for (int i = 0; i < maxClientsCount; i++) {
-          if (clientThreads[i] == this) {
-        	  clientThreads[i] = null;
-        	  counter--;
-          }
+      while (true) {        
+          synchronized (this){
+              String line = inputStream.readLine();
+              if (line.startsWith("/quit")) {
+                for (int i = 0; i < maxClientsCount; i++) {
+                    if (clientThreads[i] != null && clientThreads[i] != this) {
+                        clientThreads[i].outputStream.println("The user " + this.clientName+ " left the chat room.");
+                    }
+                    // Clean up. Set the current thread variable to null so that a new client
+                    //could be accepted by the server.
+                    else if (clientThreads[i] == this) {
+                        outputStream.println("Bye " + this.clientName +"\nYou can close this terminal");
+                        clientThreads[i] = null;
+                        counter--;
+                        inputStream.close();
+                        outputStream.close();
+                        clientSocket.close();
+                    }
+                }
+                System.out.println("Server: Synchronizing all "+counter+" clients");
+            
+            break; //from while if a client is leaving
+        }else{            
+        //write message to every client other than this client           
+              System.out.println("Server: Synchronizing all "+counter+" clients");                     
+              for (int i = 0; i < maxClientsCount; i++) {
+                  if (clientThreads[i] != null && !clientThreads[i].clientName.equals(this.clientName)) {
+                      clientThreads[i].outputStream.println("<" + this.clientName + "> " + line);
+                    }           
+                }
+            } 
         }
       }
-      /*
-       * Close the output stream, close the input stream, close the socket.
-       */
-      inputStream.close();
-      outputStream.close();
-      clientSocket.close();
-    } catch (IOException e) {
+            
+    }catch(NullPointerException e){
+        try{
+        if(clientLeft(this.clientName)){
+        }
+        }catch(IOException ioexception){
+           System.out.println("Cant close IO -- exception on line 144");
+        }
+    }catch (IOException e) {  //need this exception to OPEN IO
     }
   }
+  public boolean clientLeft (String cN)throws IOException{
+      System.out.println("Server: "+this.clientName+" left the chat");
+        synchronized(this){
+            for (int i = 0; i < maxClientsCount; i++) {
+                if (clientThreads[i] != null && !clientThreads[i].clientName.equals(cN)) {
+                    clientThreads[i].outputStream.println(cN+" left the chat");
+                } 
+                                    
+                    try{
+                    this.inputStream.close();
+                    this.outputStream.close();
+                    this.clientSocket.close();
+                    counter--;
+                    }catch(IOException e){
+                        throw new IOException ("cant close IO");
+                    }finally{
+                    clientThreads[i] = null;
+                    System.out.println("Server: Synchronizing all "+counter+" clients");
+                    }
+                    return true;
+                
+            }
+        }
+        return false;
+    }
 }
