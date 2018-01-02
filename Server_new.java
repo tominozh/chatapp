@@ -52,13 +52,10 @@ import java.net.ServerSocket;
 }
 
 /*
- * The chat client thread. This client thread opens the input and the output
- * streams for a particular client, ask the client's name, informs all the
- * clients connected to the server about the fact that a new client has joined
- * the chat room, and as long as it receive data, echos that data back to all
- * other clients. The thread broadcast the incoming messages to all clients.
- *  When a client leaves the chat room this thread informs also all the 
- *  clients about that and terminates.
+ * Client class, when connection is accepted ClientHandler gets instantiated,
+ * as long as conncetion is alive it echoes message send to all other clients.
+ *if client enters "/quit" object gets destroyed and its place in clientThreads[] is
+ *set to null. If client close terminal, NullPointerException is thrown and handled
  */
 class ClientsHandler extends Thread {
   public static int counter = 0;
