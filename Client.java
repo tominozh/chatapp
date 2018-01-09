@@ -49,8 +49,7 @@ public class Client implements Runnable {
 
         /* Create a thread to read from the server. */
         new Thread(new Client()).start();
-        while (!closed) {
-        	
+        while (!closed) {        	
         
           os.println(inputLine.readLine().trim());
         }
