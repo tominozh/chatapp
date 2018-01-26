@@ -1,3 +1,4 @@
+package chatApp;
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
@@ -24,10 +25,12 @@ public class Client implements Runnable {
 		}
 		//if all good
 		if (socket.isConnected() && dis != null && dos != null) {
+			System.out.println("all good to start");
            //new thread to read and write message
 			new Thread(new Client()).start();
 			while (isAlive) {
 				dos.writeUTF(scn.nextLine());
+				System.out.println("echo: "+scn.nextLine());
 			}
 			dos.close();
 			dis.close();

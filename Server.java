@@ -1,4 +1,3 @@
-package ChatApp;
 
 import java.io.*;
 import java.util.*;
@@ -86,7 +85,7 @@ class ClientHandler extends Thread {
 				received = dis.readUTF();
 
 				if (received.contains("logout")) {
-					this.dos.writeUTF("BYE");
+					this.dos.writeUTF("Bye");
 					isloggedin = false;
 					isAlive.set(false);
 					this.dis.close();
@@ -103,7 +102,7 @@ class ClientHandler extends Thread {
 					for (ClientHandler ch : Server.allClients) {
 						if (ch.isloggedin && !ch.equals(this)) {
 							ch.dos.writeUTF(this.name + ": " + received);
-						}else if(mc.equals(this)) {
+						}else if(ch.equals(this)) {
 							ch.dos.writeUTF("I wrote: "+received);
 						}
 					}
