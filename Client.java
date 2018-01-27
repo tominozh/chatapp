@@ -27,7 +27,9 @@ public class Client implements Runnable {
 			System.out.println("all good to start");
 			Scanner scn = new Scanner(System.in);
            //new thread to read and write message
-			new Thread(new Client()).start();
+			Thread t = new Thread(new Client());
+			t.setDaemon(true);
+			t.start();
 			while (isAlive) {
 				dos.writeUTF(scn.nextLine());
 			}
@@ -50,9 +52,10 @@ public class Client implements Runnable {
 					System.out.println(responseLine);
 				}
 
-				if (responseLine.equals("Bye")){
-					System.out.println("You can close the terminal");
+				if (responseLine.equals("BYE")){
 					isAlive = false;
+					System.out.println("You can close the terminal "+Thread.activeCount());
+					Thread.currentThread().join();					
 				}
 			}	
 		} catch (Exception e) {

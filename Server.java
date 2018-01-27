@@ -17,24 +17,31 @@ import java.net.ServerSocket;
   static MessageQueue queue = new MessageQueue();
  
   public static void main(String[] args) throws Exception {
-	  int i = 0;
-	 
-      System.out.println("Server Signing on");
-      MessageDispatcher md = new MessageDispatcher();
-      md.setDaemon(true);
-      md.start();
+	  
+	  int i = 0; //used as naming scheme
+	        
    // Server socket properties
    	  InetAddress ip = InetAddress.getByName("localhost");
    	  int port = 15566;
    	  int queueLenght = 5;
       ServerSocket serverSocket = new ServerSocket(port, queueLenght, ip);
-      System.out.println("Server listening: "+serverSocket);
+      
+      if(serverSocket.isBound()) {
+    	  System.out.println("Server listening: "+serverSocket);
+    	  
+    	  MessageDispatcher md = new MessageDispatcher();
+          md.setDaemon(true);
+          md.start();    	  
+      }      
+     
       Socket clientSocket = null;
       Thread th = null;
       ClientsHandler client = null;
-      while (true) {
+      
+      while(true) {
+    	  
     	  	clientSocket = serverSocket.accept();
-    	  // obtain input and output streams from connected socket
+    	  	//get input and output streams from connected socket
   			DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
   			DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
   			System.out.println("Client No. " + (i + 1) + " connected "+clientSocket);
@@ -45,6 +52,7 @@ import java.net.ServerSocket;
   			th.start();
   			clientThreads.add(client);
   			i++;
+  			
   			if(clientThreads.isEmpty()) {
   				//every client signed out break out of while loop
   				break;
@@ -63,7 +71,7 @@ class ClientsHandler extends Thread {
   protected int clientNumber;
   private DataInputStream inputStream = null;
   protected DataOutputStream outputStream = null;
-  private Socket clientSocket = null;
+  protected Socket clientSocket = null;
   private boolean isAlive = false;
 
   public ClientsHandler(Socket clientSocket, DataInputStream inputStream, DataOutputStream outputStream, int num) {
@@ -76,9 +84,7 @@ class ClientsHandler extends Thread {
 
   @Override
   public void run() {
-      try {
-          try {
-                            
+      try {                               
               while (isAlive) {
             	  String str = this.inputStream.readUTF();
             	  
@@ -95,12 +101,11 @@ class ClientsHandler extends Thread {
           } catch (Exception e) {
         	  System.out.println("[ClientHandler Exception] "+e.getMessage());
           }
-          Server.clientThreads.remove(this);
-      } catch (Exception ex) {
-          System.out.println(ex.getMessage());
-      } finally {
+          
+       finally {
           try {
         	  System.out.println("closing socket "+this.clientSocket);
+        	  Server.clientThreads.remove(this);
               this.inputStream.close();
               this.outputStream.close();
               this.clientSocket.close();
