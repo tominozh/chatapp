@@ -1,118 +1,112 @@
+package ChatApp;
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.net.*;
 
-// Server class
-public class Server {
 
-	// List to store active clients
-	static List<ClientHandler> allClients = new ArrayList<>();
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 
-	public static void main(String[] args) throws IOException {
-		
-	    //to open server socket we need
-		InetAddress ip = InetAddress.getByName("localhost");
-		int port = 15566;
-		int queueLenght = 5;
-		//we open server socket
-		ServerSocket serverSocket = new ServerSocket(port, queueLenght, ip);
-		
-		if (!serverSocket.isClosed()) {
-			System.out.println(serverSocket);
-			Socket clientSoc = null;
-
-			// running infinite loop for getting client request
-			while (true) {
-								
-				System.out.println("number of live clients: " + allClients.size());
-				
-				clientSoc = serverSocket.accept();
-				System.out.println("New client request received : " + clientSoc);
-
-				// obtain input and output streams from connected socket
-				DataInputStream dis = new DataInputStream(clientSoc.getInputStream());
-				DataOutputStream dos = new DataOutputStream(clientSoc.getOutputStream());
-				//create new ClientHandler and start it
-				ClientHandler ch = new ClientHandler(clientSoc, "client "+allClients.size(), dis, dos);
-				ch.start();
-				// add this client to active clients list
-				allClients.add(ch);
-				//if everybody log out we close server socket as well
-				if(allClients.isEmpty()) {
-					break;
-				}
-			}
-			serverSocket.close();
-		}
-	}
+ 
+ public class Server{
+ 
+  static List<ClientsHandler> clientThreads = new ArrayList<>();
+  static MessageQueue queue = new MessageQueue();
+ 
+  public static void main(String[] args) throws Exception {
+	  int i = 0;
+	 
+      System.out.println("Server Signing on");
+      MessageDispatcher md = new MessageDispatcher();
+      md.setDaemon(true);
+      md.start();
+   // Server socket properties
+   	  InetAddress ip = InetAddress.getByName("localhost");
+   	  int port = 15566;
+   	  int queueLenght = 5;
+      ServerSocket serverSocket = new ServerSocket(port, queueLenght, ip);
+      System.out.println("Server listening: "+serverSocket);
+      Socket clientSocket = null;
+      Thread th = null;
+      ClientsHandler client = null;
+      while (true) {
+    	  	clientSocket = serverSocket.accept();
+    	  // obtain input and output streams from connected socket
+  			DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
+  			DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
+  			System.out.println("Client No. " + (i + 1) + " connected "+clientSocket);
+  			
+  			//create new client handler,thread, start it and add to list of existing clients
+  			client = new ClientsHandler(clientSocket, dis, dos, i);
+  			th = new Thread(client);
+  			th.start();
+  			clientThreads.add(client);
+  			i++;
+  			if(clientThreads.isEmpty()) {
+  				//every client signed out break out of while loop
+  				break;
+  			}
+      }
+      serverSocket.close();
+      System.out.println("Server socket closed");      
+  }
 }
 
-// ClientHandler class
-class ClientHandler extends Thread {
-	Scanner scn = new Scanner(System.in);
-	private String name;
-	final DataInputStream dis;
-	final DataOutputStream dos;
-	Socket socket;
-	boolean isloggedin;
-	private AtomicBoolean isAlive = new AtomicBoolean(true);
+/*
+ * ClientHandler class creates new obj with client socket input and output data streams.
+ * #when a client writes a message it adds it to MessageQueue
+ */
+class ClientsHandler extends Thread {
+  protected int clientNumber;
+  private DataInputStream inputStream = null;
+  protected DataOutputStream outputStream = null;
+  private Socket clientSocket = null;
+  private boolean isAlive = false;
 
-	// constructor
-	public ClientHandler(Socket s, String name, DataInputStream dis, DataOutputStream dos) {
-		this.dis = dis;
-		this.dos = dos;
-		this.name = name;
-		this.socket = s;
-		this.isloggedin = true;
-	}
+  public ClientsHandler(Socket clientSocket, DataInputStream inputStream, DataOutputStream outputStream, int num) {
+	this.clientSocket = clientSocket;
+    this.inputStream = inputStream;
+    this.outputStream = outputStream;
+    this.clientNumber = num;
+    isAlive = true;    
+  }
 
-	@Override
-	public void run() {
-
-		while (isAlive.get()) {
-			// to make sure all threads are alive
-			for (ClientHandler ch : Server.allClients) {
-				if (!ch.isloggedin) {
-					System.out.println("removing client "+ch.name);
-					Server.allClients.remove(ch);
-				}
-			}
-			
-			String received;
-			try {
-				received = dis.readUTF();
-
-				if (received.contains("logout")) {
-					this.dos.writeUTF("Bye");
-					isloggedin = false;
-					isAlive.set(false);
-					this.dis.close();
-					this.dos.close();
-					this.socket.close();
-					for(ClientHandler ch:Server.allClients) {
-						if(ch!=this) {
-							ch.dos.writeUTF(this.name+" logged out");
-						}
-					}
-					
-				} else if (!received.isEmpty()) {
-					System.out.println("Server echo: "+received);
-					for (ClientHandler ch : Server.allClients) {
-						if (ch.isloggedin && !ch.equals(this)) {
-							ch.dos.writeUTF(this.name + ": " + received);
-						}else if(ch.equals(this)) {
-							ch.dos.writeUTF("I wrote: "+received);
-						}
-					}
-				}
-			} catch (IOException e) {
-				isloggedin = false;
-				
-			}
-			break;
-		}
-
-	}
+  @Override
+  public void run() {
+      try {
+          try {
+                            
+              while (isAlive) {
+            	  String str = this.inputStream.readUTF();
+            	  
+            	  if(str.contentEquals("/quit")) {
+            		  //this client is quitting
+            		  this.isAlive = false; //to break out of while loop
+            		  this.outputStream.writeUTF("BYE"); //to close client
+            		  Server.queue.addToQueue(clientNumber+" has left the chat");
+            	  }else {
+            		  Server.queue.addToQueue(clientNumber+str);
+            	  }                  
+              }
+              
+          } catch (Exception e) {
+        	  System.out.println("[ClientHandler Exception] "+e.getMessage());
+          }
+          Server.clientThreads.remove(this);
+      } catch (Exception ex) {
+          System.out.println(ex.getMessage());
+      } finally {
+          try {
+        	  System.out.println("closing socket "+this.clientSocket);
+              this.inputStream.close();
+              this.outputStream.close();
+              this.clientSocket.close();
+          } catch (Exception e) {
+        	  System.out.println("[ClientHandler CleanUp Exception] "+e.getMessage());
+          }
+      }
+  }
 }
