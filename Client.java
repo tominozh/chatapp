@@ -33,13 +33,9 @@ public class Client implements Runnable {
 			// new thread to read and write message
 			Thread t = new Thread(new Client());
 			t.setDaemon(true);
-			t.start();
+			t.start();			
 			while (isAlive) {
 				dos.writeUTF(scn.nextLine());
-			}
-
-			if (socket.isClosed()) {
-				System.out.println("Socket closed");
 			}
 		}
 	}
@@ -59,22 +55,18 @@ public class Client implements Runnable {
 					try {
 						isAlive = false;
 						System.out.println("You can close the terminal " + Thread.activeCount());
-
 						dos.close();
 						dis.close();
 						scn.close();
 						socket.close();
-					} catch (Exception e1) {
 
-					} finally {
-						Thread.currentThread().join();
+					} catch (Exception e) {
+						System.out.println("[Client Exception] " + e.getMessage());
 					}
-
 				}
 			}
-		} catch (Exception e) {
-			System.out.println("[Client Exception] " + e.getMessage());
+		} catch (Exception e1) {
+			System.out.println("[Client Exception - DIS] " + e1.getMessage());
 		}
-
 	}
 }

@@ -1,0 +1,41 @@
+Server listening: ServerSocket[addr=localhost/127.0.0.1,localport=15566]
+Message Dispatcher Started
+Inside readFromQueue -- Waiting
+Client No. 1 connected Socket[addr=/127.0.0.1,port=53299,localport=15566]
+Client No. 2 connected Socket[addr=/127.0.0.1,port=53300,localport=15566]
+Client No. 3 connected Socket[addr=/127.0.0.1,port=53301,localport=15566]
+Client No. 4 connected Socket[addr=/127.0.0.1,port=53302,localport=15566]
+Message added to queue at 2018-01-27T23:23:04.951Z
+message 1 dispatched at 2018-01-27T23:23:05.092Z messages in queue 1
+going to sleep for 10s...
+Message added to queue at 2018-01-27T23:23:09.123Z
+Message added to queue at 2018-01-27T23:23:14.002Z
+waking up...
+delivering message to client 0
+delivering message to client 1
+delivering message to client 2
+delivering message to client 3
+message  2 dispatched at 2018-01-27T23:23:15.094Z messages in queue 2
+going to sleep for 10s...
+Message added to queue at 2018-01-27T23:23:21.399Z
+waking up...
+delivering message to client 0
+delivering message to client 1
+delivering message to client 2
+delivering message to client 3
+message 3 dispatched at 2018-01-27T23:23:25.096Z messages in queue 2
+going to sleep for 10s...
+waking up...
+delivering message to client 0
+delivering message to client 1
+delivering message to client 2
+delivering message to client 3
+message 4 dispatched at 2018-01-27T23:23:35.099Z messages in queue 1
+going to sleep for 10s...
+waking up...
+delivering message to client 0
+delivering message to client 1
+delivering message to client 2
+delivering message to client 3
+Inside readFromQueue -- Waiting
+
