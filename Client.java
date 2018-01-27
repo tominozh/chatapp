@@ -1,4 +1,5 @@
 package ChatApp;
+
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
@@ -11,35 +12,37 @@ public class Client implements Runnable {
 	static DataInputStream dis = null;
 	static DataOutputStream dos = null;
 	static boolean isAlive = false;
+	static Scanner scn = new Scanner(System.in);
+	static Socket socket = null;
 
 	public static void main(String args[]) throws UnknownHostException, IOException {
-		
+
 		// establish the connection
-		Socket socket = new Socket("localhost", ServerPort);
+		socket = new Socket("localhost", ServerPort);
+
 		if (socket.isConnected()) {
 			// obtaining input and out streams
 			dis = new DataInputStream(socket.getInputStream());
 			dos = new DataOutputStream(socket.getOutputStream());
 			isAlive = true;
 		}
-		//if all good
+		// if all good
 		if (socket.isConnected() && dis != null && dos != null) {
 			System.out.println("all good to start");
-			Scanner scn = new Scanner(System.in);
-           //new thread to read and write message
+
+			// new thread to read and write message
 			Thread t = new Thread(new Client());
 			t.setDaemon(true);
 			t.start();
 			while (isAlive) {
 				dos.writeUTF(scn.nextLine());
 			}
-			dos.close();
-			dis.close();
-			scn.close();
-			socket.close();
+
+			if (socket.isClosed()) {
+				System.out.println("Socket closed");
+			}
 		}
 	}
-
 
 	@Override
 	public void run() {
@@ -48,18 +51,29 @@ public class Client implements Runnable {
 			while (isAlive) {
 				responseLine = dis.readUTF();
 				if (!responseLine.isEmpty()) {
-					
+
 					System.out.println(responseLine);
 				}
 
-				if (responseLine.equals("BYE")){
-					isAlive = false;
-					System.out.println("You can close the terminal "+Thread.activeCount());
-					Thread.currentThread().join();					
+				if (responseLine.equals("BYE")) {
+					try {
+						isAlive = false;
+						System.out.println("You can close the terminal " + Thread.activeCount());
+
+						dos.close();
+						dis.close();
+						scn.close();
+						socket.close();
+					} catch (Exception e1) {
+
+					} finally {
+						Thread.currentThread().join();
+					}
+
 				}
-			}	
+			}
 		} catch (Exception e) {
-             System.out.println("[Client Exception] "+e.getMessage());
+			System.out.println("[Client Exception] " + e.getMessage());
 		}
 
 	}
