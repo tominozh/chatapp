@@ -2,35 +2,46 @@ package ChatApp;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.List;
 
 public class MessageQueue {
 
-	List<String> queue = new ArrayList<>();
-	Calendar calendar = GregorianCalendar.getInstance();
-
-	public synchronized void addToQueue(String msg) {
+	List<String> queue = new ArrayList<>();	
+	
+	public synchronized void addToQueue(String msg) {	
+		//recipient's clientNumber
+		ArrayList<Object> numbers = new ArrayList<>(); 
+		
+		for (ClientsHandler client : Server.clientHandlers) {
+			numbers.add(client.clientNumber);
+		}
+		//entry for recipients
+		Server.recipients.put(msg, numbers);
+		
+		//for logging we need Message, recipients and time stamp
 		Instant timestamp = Instant.now();
-
-		System.out.println("Message added to queue at " + timestamp);
-		this.queue.add(msg);
+		numbers.add(timestamp);
+		Server.logMap.put(msg, numbers);
+		queue.add(msg);
+		//TODO notify thread responsible for logging to write out the file 
+		System.out.println("[MessageQueue] --" + msg + " added to queue at " + timestamp);
 		notify();
 	}
 
 	public synchronized String readFromQueue() {
-		while (this.queue.isEmpty()) {
+
+		while (queue.isEmpty()) {
 			try {
-				System.out.println("Inside readFromQueue -- Waiting");
+				System.out.println("[MessageQueue] -- Waiting");
 				wait();
 			} catch (Exception ex) {
-				System.out.println("Exception occured in readFromQueue");
+				System.out.println("[MessageQueue exception] " + ex.getMessage());
 			}
 		}
 		Instant timestamp = Instant.now();
-		String message = this.queue.remove(0);
-		System.out.println("Message from " + message.substring(0, 1) +" : "+message.substring(1)+ " dispatched at " + timestamp + " size of queue " + queue.size());
+		String message = queue.remove(0);
+		System.out.println("[MessageQueue]" + message.substring(1) + " dispatched at " + timestamp
+				+ " messages in queue " + (queue.size() + 1));
 		return message;
 	}
 }

@@ -19,7 +19,7 @@ public class Client implements Runnable {
 
 		// establish the connection
 		socket = new Socket("localhost", ServerPort);
-
+        
 		if (socket.isConnected()) {
 			// obtaining input and out streams
 			dis = new DataInputStream(socket.getInputStream());
@@ -28,29 +28,34 @@ public class Client implements Runnable {
 		}
 		// if all good
 		if (socket.isConnected() && dis != null && dos != null) {
-			System.out.println("all good to start");
-
 			// new thread to read and write message
 			Thread t = new Thread(new Client());
 			t.setDaemon(true);
 			t.start();			
 			while (isAlive) {
+				
 				dos.writeUTF(scn.nextLine());
 			}
 		}
+		System.out.println("[Client] -- connection refused");
 	}
 
 	@Override
 	public void run() {
 		String responseLine;
+		boolean justEntered = true;
 		try {
 			while (isAlive) {
+				
+				if(justEntered) {
+					System.out.println("client alive");
+					justEntered = false;
+				}
 				responseLine = dis.readUTF();
-				if (!responseLine.isEmpty()) {
+				if (!responseLine.isEmpty() && !responseLine.equals("BEY")) {
 
 					System.out.println(responseLine);
 				}
-
 				if (responseLine.equals("BYE")) {
 					isAlive = false;
 					try {						
