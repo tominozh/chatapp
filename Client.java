@@ -52,8 +52,8 @@ public class Client implements Runnable {
 				}
 
 				if (responseLine.equals("BYE")) {
-					try {
-						isAlive = false;
+					isAlive = false;
+					try {						
 						System.out.println("You can close the terminal " + Thread.activeCount());
 						dos.close();
 						dis.close();
