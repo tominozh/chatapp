@@ -10,7 +10,6 @@ public class MessageDispatcher extends Thread {
 	@Override
 	public synchronized void run() {
 		System.out.println("[Message Dispatcher] -- Started");
-
 		while (true) {		           	
             
 			String str = Server.queue.readFromQueue();
@@ -18,8 +17,7 @@ public class MessageDispatcher extends Thread {
 			ArrayList<Object> numbers = new ArrayList<>();
 			//sender clientNumber (ID)
 			int num = Integer.valueOf(str.substring(0, 1));
-			String message = str.substring(1);
-			
+			String message = str.substring(1);			
 			try {
 				System.out.println("going to sleep for 10s...");
 				Thread.sleep(10000);
@@ -30,8 +28,7 @@ public class MessageDispatcher extends Thread {
 				System.out.println("[Message Dispatcher Thread Sleep Exception] " + e1.getMessage());
 			}
 			//get recipients
-			if(Server.recipients.containsKey(str)) {
-				
+			if(Server.recipients.containsKey(str)) {				
 				numbers.addAll(Server.recipients.get(str));
 				//remove time stamp from recipients
 				numbers.remove(numbers.size()-1);
@@ -50,17 +47,13 @@ public class MessageDispatcher extends Thread {
 				try {
 					//num is senders clientNumber
 					if (num == client.clientNumber) {
-						/*
-						 *  convert List<Integer> to String 
-						 *  credit: https://stackoverflow.com/questions/599161/best-way-to-convert-an-arraylist-to-a-string
-						 */
+						/*   convert List<Integer> to String 
+						 *  credit: https://stackoverflow.com/questions/599161/best-way-to-convert-an-arraylist-to-a-string	 */
 						String listString = numbers.stream().map(Object::toString).collect(Collectors.joining(", "));
-						//TODO - bug - remove number num from listString
-						
 						client.outputStream.writeUTF("message delivered to clients : " + listString);
 
 					} else {
-
+						//all other recipients
 						client.outputStream.writeUTF("<Client " + num + "> " + message);
 					}
 
@@ -70,6 +63,8 @@ public class MessageDispatcher extends Thread {
 				}
 
 			});	//end forEach
+			//write log, message delivered
+			Server.logMap.put(str,"delivered");
 
 		}
 	}

@@ -42,18 +42,7 @@ public class Server {
 		Thread th = null;
 		ClientsHandler client = null;
 
-		while (true) {
-			
-			if(!logMap.isEmpty()) {
-	        	for(Map.Entry<String, Object> entry : logMap.entrySet()) {
-	        		System.out.println(entry.getKey());
-	        		ArrayList<Object> objects = (ArrayList) entry.getValue();
-	        		for(Object obj : objects) {
-	        			System.out.println("[LOG] -- "+obj.toString());
-	        		}
-	        	}
-			}
-			
+		while (true) {			
 			// blocks here until socket accepted
 			clientSocket = serverSocket.accept();
 
@@ -62,20 +51,30 @@ public class Server {
 			DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
 			System.out.println("[Server] -- Client No. " + (i + 1) + " connected " + clientSocket);
 
-			// create new client handler,thread, start it and add to list of existing
-			// clients
+			// create new client handler,thread, start it and add to list of existing clients
 			client = new ClientsHandler(clientSocket, dis, dos, i);
 			th = new Thread(client);
 			th.start();
 			clientHandlers.add(client);
 			//Thread.sleep(3000);
 			i++;
+			
             if(clientHandlers.isEmpty()) {
             	break;
             }
 		}
 		serverSocket.close();
 		System.out.println("[Server] -- server socket closed");
+		
+		if(!logMap.isEmpty()) {
+	        	for(Map.Entry<String, Object> entry : logMap.entrySet()) {
+	        		System.out.println(entry.getKey());
+	        		ArrayList<Object> objects = (ArrayList) entry.getValue();
+	        		for(Object obj : objects) {
+	        			System.out.println("[LOG] -- "+obj.toString());
+	        		}
+	        	}
+			}
 
 	}
 

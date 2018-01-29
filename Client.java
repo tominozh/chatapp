@@ -21,7 +21,7 @@ public class Client implements Runnable {
 		socket = new Socket("localhost", ServerPort);
         
 		if (socket.isConnected()) {
-			// obtaining input and out streams
+			// obtaining input and output streams from connected socket
 			dis = new DataInputStream(socket.getInputStream());
 			dos = new DataOutputStream(socket.getOutputStream());
 			isAlive = true;
@@ -37,7 +37,7 @@ public class Client implements Runnable {
 				dos.writeUTF(scn.nextLine());
 			}
 		}
-		System.out.println("[Client] -- connection refused");
+		System.out.println("[Client] -- client died");
 	}
 
 	@Override
@@ -48,7 +48,7 @@ public class Client implements Runnable {
 			while (isAlive) {
 				
 				if(justEntered) {
-					System.out.println("client alive");
+					System.out.println("welcome to the chat");
 					justEntered = false;
 				}
 				responseLine = dis.readUTF();

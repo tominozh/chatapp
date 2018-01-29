@@ -29,7 +29,6 @@ public class MessageQueue {
 	}
 
 	public synchronized String readFromQueue() {
-
 		while (queue.isEmpty()) {
 			try {
 				System.out.println("[MessageQueue] -- Waiting");
